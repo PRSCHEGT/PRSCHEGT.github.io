@@ -1,146 +1,307 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de Accesos</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-
-<style>
-.fade { animation: fade .2s ease-in-out; }
-@keyframes fade { from {opacity:0} to {opacity:1} }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Consultas</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    <!-- Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configuración para asegurar que Tailwind cargue los colores dinámicos
+        tailwind.config = {
+            safelist: [
+                'bg-blue-500', 'bg-red-500', 'bg-green-500', 'bg-yellow-500', 
+                'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500',
+                'bg-gray-200', 'text-gray-400', 'text-gray-700', 'text-blue-600',
+                'border-blue-500', 'bg-blue-50', 'ring-gray-400'
+            ]
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Animación suave para el modal */
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
+<body class="min-h-screen bg-gray-100 p-8 font-sans">
 
-<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Panel de Consultas</h1>
+            <p class="text-gray-500">Haz clic en un acceso para abrirlo o configura los espacios en blanco.</p>
+        </header>
 
-<h1 class="text-3xl font-bold mb-6">Panel de Accesos</h1>
-
-<div id="grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-
-<!-- MODAL -->
-<div id="modal" class="hidden fixed inset-0 bg-black/50 flex justify-center items-center fade">
-<div class="bg-white p-5 rounded-xl w-full max-w-md">
-
-<h2 class="text-lg font-bold mb-3">Agregar acceso</h2>
-
-<form id="form">
-
-<input id="title" placeholder="Nombre" class="w-full border p-2 mb-2 rounded" required>
-<input id="url" placeholder="https://..." class="w-full border p-2 mb-2 rounded">
-
-<select id="icon" class="w-full border p-2 mb-2 rounded">
-<option value="link">link</option>
-<option value="user">user</option>
-<option value="home">home</option>
-<option value="globe">globe</option>
-<option value="file">file</option>
-<option value="youtube">youtube</option>
-<option value="mail">mail</option>
-<option value="map">map</option>
-<option value="phone">phone</option>
-</select>
-
-<select id="color" class="w-full border p-2 mb-2 rounded">
-<option value="bg-blue-500">Azul</option>
-<option value="bg-red-500">Rojo</option>
-<option value="bg-green-500">Verde</option>
-<option value="bg-yellow-500">Amarillo</option>
-<option value="bg-purple-500">Morado</option>
-<option value="bg-pink-500">Rosa</option>
-<option value="bg-indigo-500">Indigo</option>
-<option value="bg-teal-500">Teal</option>
-<option value="bg-orange-500">Naranja</option>
-</select>
-
-<div class="flex justify-end gap-2 mt-3">
-<button type="button" onclick="closeModal()">Cancelar</button>
-<button class="bg-blue-500 text-white px-4 py-2 rounded">Guardar</button>
-</div>
-
-</form>
-
-</div>
-</div>
-
-<script>
-
-let links = JSON.parse(localStorage.getItem('links') || '[]');
-
-function save() {
-    localStorage.setItem('links', JSON.stringify(links));
-}
-
-function render() {
-    const grid = document.getElementById('grid');
-    grid.innerHTML = '';
-
-    links.forEach((l,i) => {
-        grid.innerHTML += `
-        <div onclick="openLink('${l.url}')"
-        class="bg-white p-4 rounded-xl shadow relative cursor-pointer">
-
-        <button onclick="event.stopPropagation(); remove(${i})"
-        class="absolute top-2 right-2">🗑</button>
-
-        <div class="w-14 h-14 ${l.color} text-white flex items-center justify-center rounded mb-2">
-        <i data-lucide="${l.icon}"></i>
+        <!-- Contenedor de la cuadrícula -->
+        <div id="grid-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <!-- Los botones se generarán aquí con JavaScript -->
         </div>
-
-        <p>${l.title}</p>
-        </div>
-        `;
-    });
-
-    grid.innerHTML += `
-    <div onclick="openModal()"
-    class="border-2 border-dashed flex items-center justify-center cursor-pointer">
-    +
     </div>
-    `;
 
-    lucide.createIcons();
-}
+    <!-- Modal de Configuración -->
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                <h2 class="text-xl font-semibold text-gray-800">Configurar Acceso</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <form id="config-form" onsubmit="saveConfig(event)" class="p-6">
+                <input type="hidden" id="link-id">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Acceso</label>
+                        <input type="text" id="link-title" placeholder="Ej. Facebook, Mi Correo..." required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">URL (Dirección Web)</label>
+                        <input type="url" id="link-url" placeholder="https://www..." required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    </div>
 
-function openLink(url) {
-    window.open(url, '_blank');
-}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un Icono</label>
+                        <div id="icon-picker" class="grid grid-cols-6 gap-2">
+                            <!-- Iconos generados por JS -->
+                        </div>
+                        <input type="hidden" id="link-icon" value="link">
+                    </div>
 
-function openModal() {
-    modal.classList.remove('hidden');
-}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Color del Fondo</label>
+                        <div id="color-picker" class="flex flex-wrap gap-2">
+                            <!-- Colores generados por JS -->
+                        </div>
+                        <input type="hidden" id="link-color" value="bg-blue-500">
+                    </div>
+                </div>
 
-function closeModal() {
-    modal.classList.add('hidden');
-}
+                <div class="mt-8 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal()"
+                        class="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors shadow-sm">
+                        Guardar Acceso
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-document.getElementById('form').onsubmit = (e) => {
-    e.preventDefault();
+    <script>
+        // Datos Iniciales
+        const initialLinks = [
+            { id: 'cfe', title: 'Recibo CFE', url: 'https://app.cfe.mx/Aplicaciones/CCFE/Recibos/Consulta/', icon: 'zap', color: 'bg-green-500', isBlank: false },
+            { id: 'curp', title: 'Consulta CURP', url: 'https://www.gob.mx/curp/', icon: 'user', color: 'bg-red-500', isBlank: false },
+            { id: 'repuve', title: 'Consulta REPUVE', url: 'https://www2.repuve.gob.mx:8443/ciudadania/', icon: 'car', color: 'bg-blue-500', isBlank: false },
+            { id: 'agendadora', title: 'Agendadora (Citas)', url: 'https://citas.sre.gob.mx/', icon: 'calendar', color: 'bg-teal-500', isBlank: false },
+            { id: 'blank1', title: 'Añadir Acceso', url: '', icon: 'plus', color: 'bg-gray-200', isBlank: true },
+            { id: 'blank2', title: 'Añadir Acceso', url: '', icon: 'plus', color: 'bg-gray-200', isBlank: true },
+            { id: 'blank3', title: 'Añadir Acceso', url: '', icon: 'plus', color: 'bg-gray-200', isBlank: true },
+            { id: 'blank4', title: 'Añadir Acceso', url: '', icon: 'plus', color: 'bg-gray-200', isBlank: true },
+            { id: 'blank5', title: 'Añadir Acceso', url: '', icon: 'plus', color: 'bg-gray-200', isBlank: true },
+            { id: 'blank6', title: 'Añadir Acceso', url: '', icon: 'plus', color: 'bg-gray-200', isBlank: true },
+        ];
 
-    const newLink = {
-        title: title.value,
-        url: url.value,
-        icon: icon.value,
-        color: color.value
-    };
+        // Listas de opciones
+        const availableIcons = ['link', 'user', 'car', 'calendar', 'briefcase', 'file-text', 'globe', 'mail', 'phone', 'shopping-cart', 'map', 'monitor'];
+        const availableColors = ['bg-blue-500', 'bg-red-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500'];
 
-    links.push(newLink);
-    save();
-    render();
-    closeModal();
-};
+        // Cargar desde localStorage o usar iniciales
+        let links = JSON.parse(localStorage.getItem('dashboardLinks')) || initialLinks;
 
-function remove(i) {
-    links.splice(i,1);
-    save();
-    render();
-}
+        // Elementos del DOM
+        const gridContainer = document.getElementById('grid-container');
+        const modal = document.getElementById('modal');
+        const iconPicker = document.getElementById('icon-picker');
+        const colorPicker = document.getElementById('color-picker');
 
-render();
+        // Renderizar la cuadrícula
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            
+            links.forEach(link => {
+                const isBlank = link.isBlank;
+                const cardClass = isBlank 
+                    ? 'bg-white border-2 border-dashed border-gray-300 hover:border-blue-400' 
+                    : 'bg-white border border-gray-100';
+                
+                const iconColorClass = isBlank ? 'bg-gray-200 text-gray-400 shadow-none' : `${link.color} text-white shadow-inner`;
+                const textClass = isBlank ? 'text-gray-400' : 'text-gray-700';
 
-</script>
+                // Botones flotantes (solo si no es blanco)
+                let actionButtons = '';
+                if (!isBlank) {
+                    let deleteBtn = '';
+                    // Solo permitir borrar los que eran espacios en blanco originales
+                    if (link.id.startsWith('blank')) {
+                        deleteBtn = `
+                            <button onclick="resetLink(event, '${link.id}')" class="p-1.5 bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600 rounded-full transition-colors" title="Eliminar">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        `;
+                    }
+                    
+                    actionButtons = `
+                        <div class="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button onclick="editLink(event, '${link.id}')" class="p-1.5 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-600 rounded-full transition-colors" title="Editar">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                            ${deleteBtn}
+                        </div>
+                    `;
+                }
 
+                const cardHTML = `
+                    <div onclick="handleCardClick('${link.id}')" class="relative group flex flex-col items-center justify-center p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-48 ${cardClass}">
+                        ${actionButtons}
+                        <div class="w-20 h-20 flex items-center justify-center rounded-2xl mb-4 transition-transform duration-300 group-hover:scale-110 ${iconColorClass}">
+                            <i data-lucide="${link.icon}" class="w-10 h-10"></i>
+                        </div>
+                        <h3 class="text-center font-medium px-2 w-full truncate ${textClass}">
+                            ${link.title}
+                        </h3>
+                    </div>
+                `;
+                gridContainer.insertAdjacentHTML('beforeend', cardHTML);
+            });
+
+            // Inicializar los iconos de Lucide
+            lucide.createIcons();
+            saveData(); // Guardar cambios en el navegador
+        }
+
+        // Manejar clics en las tarjetas
+        function handleCardClick(id) {
+            const link = links.find(l => l.id === id);
+            if (link.isBlank) {
+                openModal(link);
+            } else {
+                window.open(link.url, '_blank');
+            }
+        }
+
+        // Abrir Modal
+        function openModal(link) {
+            document.getElementById('link-id').value = link.id;
+            document.getElementById('link-title').value = link.isBlank ? '' : link.title;
+            document.getElementById('link-url').value = link.url || '';
+            
+            // Setear icono y color iniciales
+            const initialIcon = link.isBlank ? 'link' : link.icon;
+            const initialColor = link.isBlank ? availableColors[Math.floor(Math.random() * availableColors.length)] : link.color;
+            
+            document.getElementById('link-icon').value = initialIcon;
+            document.getElementById('link-color').value = initialColor;
+
+            renderPickers();
+            modal.classList.remove('hidden');
+        }
+
+        // Cerrar Modal
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.getElementById('config-form').reset();
+        }
+
+        // Renderizar selectores de iconos y colores
+        function renderPickers() {
+            const selectedIcon = document.getElementById('link-icon').value;
+            const selectedColor = document.getElementById('link-color').value;
+
+            // Renderizar Iconos
+            iconPicker.innerHTML = availableIcons.map(icon => `
+                <button type="button" onclick="selectIcon('${icon}')"
+                    class="p-2 flex items-center justify-center rounded-lg border-2 transition-all 
+                    ${selectedIcon === icon ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-transparent bg-gray-50 text-gray-500 hover:bg-gray-100'}">
+                    <i data-lucide="${icon}" class="w-6 h-6"></i>
+                </button>
+            `).join('');
+
+            // Renderizar Colores
+            colorPicker.innerHTML = availableColors.map(color => `
+                <button type="button" onclick="selectColor('${color}')"
+                    class="w-8 h-8 rounded-full ${color} transition-transform 
+                    ${selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110'}">
+                </button>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Seleccionar Icono
+        function selectIcon(iconName) {
+            document.getElementById('link-icon').value = iconName;
+            renderPickers();
+        }
+
+        // Seleccionar Color
+        function selectColor(colorClass) {
+            document.getElementById('link-color').value = colorClass;
+            renderPickers();
+        }
+
+        // Guardar Configuración del Modal
+        function saveConfig(e) {
+            e.preventDefault();
+            const id = document.getElementById('link-id').value;
+            
+            links = links.map(link => {
+                if (link.id === id) {
+                    return {
+                        id: link.id,
+                        title: document.getElementById('link-title').value || 'Sin Título',
+                        url: document.getElementById('link-url').value,
+                        icon: document.getElementById('link-icon').value,
+                        color: document.getElementById('link-color').value,
+                        isBlank: false
+                    };
+                }
+                return link;
+            });
+
+            closeModal();
+            renderGrid();
+        }
+
+        // Editar un enlace existente
+        function editLink(e, id) {
+            e.stopPropagation(); // Evita que se abra la URL
+            const link = links.find(l => l.id === id);
+            openModal(link);
+        }
+
+        // Restablecer a espacio en blanco (Eliminar)
+        function resetLink(e, id) {
+            e.stopPropagation(); // Evita que se abra la URL
+            if(confirm('¿Estás seguro de eliminar este acceso?')) {
+                links = links.map(link => {
+                    if (link.id === id) {
+                        return { id: link.id, title: 'Añadir Acceso', url: '', icon: 'plus', color: 'bg-gray-200', isBlank: true };
+                    }
+                    return link;
+                });
+                renderGrid();
+            }
+        }
+
+        // Guardar en LocalStorage
+        function saveData() {
+            localStorage.setItem('dashboardLinks', JSON.stringify(links));
+        }
+
+        // Inicializar la aplicación
+        renderGrid();
+
+    </script>
 </body>
 </html>

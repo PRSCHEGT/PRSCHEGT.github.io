@@ -1,190 +1,144 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Accesos</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Accesos</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+.fade { animation: fade .2s ease-in-out; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+</style>
 </head>
 
-<body class="min-h-screen bg-gray-100 p-8 font-sans">
+<body class="bg-gray-100 min-h-screen p-6">
 
-<div class="max-w-6xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Panel de Accesos</h1>
+<h1 class="text-3xl font-bold mb-6">Panel de Accesos</h1>
 
-    <div id="grid-container" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
-</div>
+<div id="grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
 <!-- MODAL -->
-<div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-    <div class="bg-white p-6 rounded-xl w-full max-w-md">
+<div id="modal" class="hidden fixed inset-0 bg-black/50 flex justify-center items-center fade">
+<div class="bg-white p-5 rounded-xl w-full max-w-md">
 
-        <h2 class="text-xl font-bold mb-4">Nuevo Acceso</h2>
+<h2 class="text-lg font-bold mb-3">Agregar acceso</h2>
 
-        <form id="form">
+<form id="form">
 
-            <input type="hidden" id="link-id">
+<input id="title" placeholder="Nombre" class="w-full border p-2 mb-2 rounded" required>
+<input id="url" placeholder="https://..." class="w-full border p-2 mb-2 rounded">
 
-            <input id="title" placeholder="Nombre"
-                class="w-full border p-2 mb-3 rounded" required>
+<select id="icon" class="w-full border p-2 mb-2 rounded">
+<option value="link">link</option>
+<option value="user">user</option>
+<option value="home">home</option>
+<option value="globe">globe</option>
+<option value="file">file</option>
+<option value="youtube">youtube</option>
+<option value="mail">mail</option>
+<option value="map">map</option>
+<option value="phone">phone</option>
+</select>
 
-            <input id="url" placeholder="https://..."
-                class="w-full border p-2 mb-3 rounded">
+<select id="color" class="w-full border p-2 mb-2 rounded">
+<option value="bg-blue-500">Azul</option>
+<option value="bg-red-500">Rojo</option>
+<option value="bg-green-500">Verde</option>
+<option value="bg-yellow-500">Amarillo</option>
+<option value="bg-purple-500">Morado</option>
+<option value="bg-pink-500">Rosa</option>
+<option value="bg-indigo-500">Indigo</option>
+<option value="bg-teal-500">Teal</option>
+<option value="bg-orange-500">Naranja</option>
+</select>
 
-            <input type="file" id="file" accept="application/pdf"
-                class="w-full border p-2 mb-3 rounded">
+<div class="flex justify-end gap-2 mt-3">
+<button type="button" onclick="closeModal()">Cancelar</button>
+<button class="bg-blue-500 text-white px-4 py-2 rounded">Guardar</button>
+</div>
 
-            <input id="icon" placeholder="Icono (ej: link)"
-                class="w-full border p-2 mb-3 rounded">
+</form>
 
-            <input id="color" placeholder="Color Tailwind (ej: bg-blue-500)"
-                class="w-full border p-2 mb-3 rounded">
-
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="closeModal()">Cancelar</button>
-                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
-                    Guardar
-                </button>
-            </div>
-        </form>
-
-    </div>
+</div>
 </div>
 
 <script>
 
-// 🔥 CAMBIA ESTA URL POR TU BACKEND EN INTERNET
-const API_URL = "https://TU-BACKEND.onrender.com";
+let links = JSON.parse(localStorage.getItem('links') || '[]');
 
-let links = [];
-
-async function loadLinks() {
-    try {
-        const res = await fetch(`${API_URL}/links`);
-        links = await res.json();
-        render();
-    } catch (err) {
-        console.log(err);
-        document.getElementById('grid-container').innerHTML =
-            '<p class="text-red-500">Error conectando al servidor</p>';
-    }
+function save() {
+    localStorage.setItem('links', JSON.stringify(links));
 }
 
 function render() {
-    const grid = document.getElementById('grid-container');
+    const grid = document.getElementById('grid');
     grid.innerHTML = '';
 
-    links.forEach(link => {
+    links.forEach((l,i) => {
         grid.innerHTML += `
-        <div onclick="openLink('${link.url}')"
-            class="p-4 bg-white rounded-xl shadow cursor-pointer relative">
+        <div onclick="openLink('${l.url}')"
+        class="bg-white p-4 rounded-xl shadow relative cursor-pointer">
 
-            <button onclick="event.stopPropagation(); edit('${link.id}')"
-                class="absolute top-2 right-10">✏️</button>
+        <button onclick="event.stopPropagation(); remove(${i})"
+        class="absolute top-2 right-2">🗑</button>
 
-            <button onclick="event.stopPropagation(); del('${link.id}')"
-                class="absolute top-2 right-2">🗑</button>
+        <div class="w-14 h-14 ${l.color} text-white flex items-center justify-center rounded mb-2">
+        <i data-lucide="${l.icon}"></i>
+        </div>
 
-            <div class="w-16 h-16 ${link.color || 'bg-blue-500'} flex items-center justify-center text-white rounded mb-2">
-                <i data-lucide="${link.icon || 'link'}"></i>
-            </div>
-
-            <p>${link.title}</p>
+        <p>${l.title}</p>
         </div>
         `;
     });
 
     grid.innerHTML += `
-        <div onclick="openModal()"
-            class="p-4 border-dashed border-2 flex items-center justify-center cursor-pointer">
-            +
-        </div>
+    <div onclick="openModal()"
+    class="border-2 border-dashed flex items-center justify-center cursor-pointer">
+    +
+    </div>
     `;
 
     lucide.createIcons();
 }
 
 function openLink(url) {
-    if (url.endsWith('.pdf')) {
-        const win = window.open('');
-        win.document.write(`
-            <iframe src="${url}" style="width:100%;height:100vh;"></iframe>
-        `);
-    } else {
-        window.open(url, '_blank');
-    }
+    window.open(url, '_blank');
 }
 
 function openModal() {
-    document.getElementById('modal').classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeModal() {
-    document.getElementById('modal').classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
-document.getElementById('form').addEventListener('submit', async (e) => {
+document.getElementById('form').onsubmit = (e) => {
     e.preventDefault();
 
-    let url = document.getElementById('url').value;
-    const file = document.getElementById('file').files[0];
-
-    if (file) {
-        const fd = new FormData();
-        fd.append('file', file);
-
-        const res = await fetch(`${API_URL}/upload`, {
-            method: 'POST',
-            body: fd
-        });
-
-        const data = await res.json();
-        url = data.url;
-    }
-
-    if (url.startsWith('file://')) {
-        alert('No permitido');
-        return;
-    }
-
     const newLink = {
-        title: document.getElementById('title').value,
-        url,
-        icon: document.getElementById('icon').value || 'link',
-        color: document.getElementById('color').value || 'bg-blue-500'
+        title: title.value,
+        url: url.value,
+        icon: icon.value,
+        color: color.value
     };
 
-    await fetch(`${API_URL}/links`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newLink)
-    });
-
+    links.push(newLink);
+    save();
+    render();
     closeModal();
-    loadLinks();
-});
+};
 
-async function del(id) {
-    await fetch(`${API_URL}/links/${id}`, {
-        method: 'DELETE'
-    });
-    loadLinks();
+function remove(i) {
+    links.splice(i,1);
+    save();
+    render();
 }
 
-function edit(id) {
-    const link = links.find(l => l.id === id);
-
-    document.getElementById('title').value = link.title;
-    document.getElementById('url').value = link.url;
-    document.getElementById('icon').value = link.icon;
-    document.getElementById('color').value = link.color;
-
-    openModal();
-}
-
-loadLinks();
+render();
 
 </script>
 
